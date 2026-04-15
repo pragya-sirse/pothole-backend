@@ -1,0 +1,51 @@
+package com.pothole.pothole_backend.model;
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = "zones")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Zone {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id", nullable = false)
+    private City city;
+
+    @Column(name = "zone_number", nullable = false)
+    private Integer zoneNumber;
+
+    @Column(name = "zone_name", nullable = false, length = 200)
+    private String zoneName;
+
+    @Column(name = "office_address", length = 300)
+    private String officeAddress;
+
+    @Column(length = 50)
+    private String phone;
+
+    @Column(name = "csi_health_no", length = 50)
+    private String csiHealthNo;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "zone", fetch = FetchType.LAZY)
+    private List<Ward> wards;
+
+    @OneToMany(mappedBy = "zone", fetch = FetchType.LAZY)
+    private List<Authority> authorities;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+    }
+}

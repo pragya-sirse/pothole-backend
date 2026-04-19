@@ -1,6 +1,7 @@
 package com.pothole.pothole_backend.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ public class Authority {
 
     @Column(length = 200)
     private String designation;
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zone_id", nullable = false)

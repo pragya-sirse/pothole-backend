@@ -1,6 +1,7 @@
 package com.pothole.pothole_backend.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -16,15 +17,16 @@ public class Pothole {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id", nullable = false)
     private City city;
-
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zone_id", nullable = false)
     private Zone zone;
-
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ward_id")
     private Ward ward;
@@ -71,10 +73,12 @@ public class Pothole {
     @Enumerated(EnumType.STRING)
     @Column(name = "road_type", length = 15)
     private RoadType roadType;
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reported_by")
     private User reportedBy;
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_to")

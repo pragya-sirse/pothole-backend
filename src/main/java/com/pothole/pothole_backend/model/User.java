@@ -2,6 +2,7 @@ package com.pothole.pothole_backend.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "Users")
@@ -26,13 +27,15 @@ public class User {
 
     @Column(length = 20)
     private String phone;
-
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler","zones"})
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id")
     private City city;
 
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ward_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private Ward ward;
 
     @Enumerated(EnumType.STRING)

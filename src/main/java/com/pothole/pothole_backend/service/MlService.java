@@ -21,41 +21,47 @@ public class MlService {
     private final RestTemplate restTemplate;
 
     @Value("${ml.service.url}")
-    private String mlServiceUrl;
+    private String mlUrl;
 
-    // Call Python YOLOv8 service
     @SuppressWarnings("unchecked")
-    public Map<String, Object> detectPothole(MultipartFile imageFile) {
+    public Map<String, Object> detectPothole(MultipartFile image) {
         try {
+            if (image == null || image.isEmpty()) {
+                return fallback();
+            }
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-            ByteArrayResource fileResource = new ByteArrayResource(imageFile.getBytes()) {
+            ByteArrayResource resource = new ByteArrayResource(
+                    image.getBytes()) {
                 @Override
                 public String getFilename() {
-                    return imageFile.getOriginalFilename();
+                    return image.getOriginalFilename() != null
+                            ? image.getOriginalFilename() : "image.jpg";
                 }
             };
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("image", fileResource);
-
-            HttpEntity<MultiValueMap<String, Object>> requestEntity =
-                    new HttpEntity<>(body, headers);
+            body.add("image", resource);
 
             ResponseEntity<Map> response = restTemplate.exchange(
-                    mlServiceUrl, HttpMethod.POST, requestEntity, Map.class);
+                    mlUrl, HttpMethod.POST,
+                    new HttpEntity<>(body, headers), Map.class);
 
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                log.info("ML detection successful: {}", response.getBody());
+            if (response.getStatusCode() == HttpStatus.OK
+                    && response.getBody() != null) {
+                log.info("ML detection success: {}", response.getBody());
                 return response.getBody();
             }
-
         } catch (Exception e) {
-            log.warn("ML service unavailable, using fallback: {}", e.getMessage());
+            log.warn("ML service unavailable, using fallback: {}",
+                    e.getMessage());
         }
+        return fallback();
+    }
 
-        // Fallback when ML service is down (for testing)
+    private Map<String, Object> fallback() {
         return Map.of(
                 "pothole_detected", true,
                 "severity", "medium",

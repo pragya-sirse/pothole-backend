@@ -31,9 +31,6 @@ public class City {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "city", fetch = FetchType.LAZY)
-    private List<Zone> zones;
-
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();

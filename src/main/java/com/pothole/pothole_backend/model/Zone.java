@@ -38,12 +38,6 @@ public class Zone {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "zone", fetch = FetchType.LAZY)
-    private List<Ward> wards;
-
-    @OneToMany(mappedBy = "zone", fetch = FetchType.LAZY)
-    private List<Authority> authorities;
-
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();

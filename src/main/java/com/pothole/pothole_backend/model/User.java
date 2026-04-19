@@ -28,12 +28,12 @@ public class User {
     @Column(length = 20)
     private String phone;
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler","zones"})
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "city_id")
     private City city;
 
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ward_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private Ward ward;

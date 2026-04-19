@@ -16,12 +16,12 @@ public class Repair {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "pothole_id", nullable = false)
     private Pothole pothole;
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "authority_id", nullable = false)
     private Authority authority;
 

@@ -19,15 +19,15 @@ public class Pothole {
     private Integer id;
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "city_id", nullable = false)
     private City city;
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "zone_id", nullable = false)
     private Zone zone;
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ward_id")
     private Ward ward;
 
@@ -75,12 +75,12 @@ public class Pothole {
     private RoadType roadType;
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "reported_by")
     private User reportedBy;
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "assigned_to")
     private Authority assignedTo;
 

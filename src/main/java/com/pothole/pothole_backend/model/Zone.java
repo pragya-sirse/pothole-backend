@@ -17,7 +17,7 @@ public class Zone {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "city_id", nullable = false)
     private City city;
 

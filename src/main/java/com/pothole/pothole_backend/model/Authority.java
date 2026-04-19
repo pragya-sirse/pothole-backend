@@ -25,7 +25,7 @@ public class Authority {
     private String designation;
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "zone_id", nullable = false)
     private Zone zone;
 

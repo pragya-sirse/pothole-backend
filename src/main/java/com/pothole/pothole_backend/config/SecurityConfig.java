@@ -29,37 +29,18 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // CSRF disable - REST API hai
                 .csrf(csrf -> csrf.disable())
-
-                // Session stateless - JWT use kar rahe hain
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // Frame options disable - Render/proxy ke liye
                 .headers(headers ->
                         headers.frameOptions(frame -> frame.disable()))
-
-                // HTTPS redirect disable - Render khud handle karta hai
-                .requiresChannel(channel ->
-                        channel.anyRequest().requiresInsecure())
-
-                // Public aur protected routes
                 .authorizeHttpRequests(auth -> auth
-
-                        // ── AUTH ── public
                         .requestMatchers("/api/auth/**").permitAll()
-
-                        // ── LOCATIONS ── public
                         .requestMatchers("/api/locations/**").permitAll()
-
-                        // ── POTHOLES ── public GET only
                         .requestMatchers(HttpMethod.GET, "/api/potholes/map/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/potholes/city/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/potholes/zone/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/potholes/{id}").permitAll()
-
-                        // ── EVERYTHING ELSE ── needs login
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

@@ -1,8 +1,11 @@
 FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
+
 COPY . .
 
 RUN chmod +x mvnw && ./mvnw clean package -DskipTests
 
-CMD ["sh", "-c", "java -jar target/*.jar"]
+EXPOSE 8080
+
+CMD ["java", "-jar", "target/pothole-backend-0.0.1-SNAPSHOT.jar"]

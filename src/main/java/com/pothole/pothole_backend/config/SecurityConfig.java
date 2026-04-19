@@ -35,10 +35,12 @@ public class SecurityConfig {
                 .headers(headers ->
                         headers.frameOptions(frame -> frame.disable()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()   // ✅ register/login
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/locations/**").permitAll()
-                        .requestMatchers("/api/cities/**").permitAll() // ✅ important
-                        .requestMatchers(HttpMethod.GET, "/api/potholes/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/potholes/map/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/potholes/city/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/potholes/zone/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/potholes/{id}").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

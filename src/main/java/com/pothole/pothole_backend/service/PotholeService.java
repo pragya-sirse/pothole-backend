@@ -20,10 +20,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PotholeService {
 
+
     private final PotholeRepository potholeRepository;
     private final CityRepository cityRepository;
     private final ZoneRepository zoneRepository;
-    private final WardRepository wardRepository;
     private final UserRepository userRepository;
     private final AuthorityRepository authorityRepository;
     private final UpvoteRepository upvoteRepository;
@@ -31,11 +31,10 @@ public class PotholeService {
     private final MlService mlService;
     private final EmailService emailService;
 
-    // ── REPORT A NEW POTHOLE ─────────────────────────────────
+    // ── REPORT NEW POTHOLE ────────────────────────────────
     public PotholeResponse reportPothole(PotholeReportRequest req,
                                          MultipartFile image,
                                          String userEmail) {
-
         // 1. Get user
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -44,38 +43,42 @@ public class PotholeService {
         City city = cityRepository.findById(req.getCityId())
                 .orElseThrow(() -> new RuntimeException("City not found"));
 
-        // 3. Find nearby existing pothole (duplicate check within ~500m)
-        List<Pothole> nearby = potholeRepository.findNearby(req.getLatitude(), req.getLongitude());
+        // 3. Duplicate check within 500m
+        List<Pothole> nearby = potholeRepository
+                .findNearby(req.getLatitude(), req.getLongitude());
         if (!nearby.isEmpty()) {
-            // Auto upvote existing one instead
             Pothole existing = nearby.get(0);
             upvotePothole(existing.getId(), userEmail);
             return mapToResponse(existing);
         }
 
-        // 4. Call ML service for detection
-        Map<String, Object> mlResult = mlService.detectPothole(image);
-        boolean detected = (boolean) mlResult.getOrDefault("pothole_detected", true);
-        String severity   = (String) mlResult.getOrDefault("severity", "medium");
-        Double confidence = ((Number) mlResult.getOrDefault("confidence", 0.75)).doubleValue();
-        Double sevScore   = ((Number) mlResult.getOrDefault("severity_score", 0.60)).doubleValue();
-        Integer bboxW     = ((Number) mlResult.getOrDefault("bbox_width", 100)).intValue();
-        Integer bboxH     = ((Number) mlResult.getOrDefault("bbox_height", 100)).intValue();
+        // 4. ML detection
+        Map<String, Object> ml = mlService.detectPothole(image);
+        String severity  = (String) ml.getOrDefault("severity", "medium");
+        Float confidence = ((Number) ml.getOrDefault("confidence", 0.75)).floatValue();
+        Float sevScore   = ((Number) ml.getOrDefault("severity_score", 0.60)).floatValue();
+        Integer bboxW    = ((Number) ml.getOrDefault("bbox_width", 100)).intValue();
+        Integer bboxH    = ((Number) ml.getOrDefault("bbox_height", 100)).intValue();
 
-        // 5. Find zone by city (simple assignment — first zone of city)
+        // 5. Get first zone of city
         List<Zone> zones = zoneRepository.findByCityId(city.getId());
-        if (zones.isEmpty()) throw new RuntimeException("No zones configured for this city");
-        Zone zone = zones.get(0); // In production: use GPS polygon matching
+        if (zones.isEmpty()) throw new RuntimeException("No zones configured for city");
+        Zone zone = zones.get(0);
 
-        // 6. Image URL (Cloudinary will be integrated here)
-        String imageUrl = "https://res.cloudinary.com/demo/pothole_" +
-                System.currentTimeMillis() + ".jpg";
+        // 6. Road type
+        String roadType = (req.getRoadType() != null
+                && !req.getRoadType().isEmpty())
+                ? req.getRoadType() : "unknown";
 
-        // 7. Calculate priority score
-        int priority = calculatePriority(severity, 0,
-                req.getRoadType() != null ? req.getRoadType() : "unknown");
+        // 7. Priority score
+        int priority = calcPriority(severity, 0, roadType);
 
-        // 8. Build and save pothole
+        // 8. Image URL placeholder
+        String imageUrl = (image != null && !image.isEmpty())
+                ? "https://res.cloudinary.com/demo/ph_" + System.currentTimeMillis() + ".jpg"
+                : "https://res.cloudinary.com/demo/placeholder.jpg";
+
+        // 9. Build and save pothole
         Pothole pothole = Pothole.builder()
                 .city(city)
                 .zone(zone)
@@ -83,189 +86,184 @@ public class PotholeService {
                 .longitude(req.getLongitude())
                 .imageUrl(imageUrl)
                 .severity(Pothole.Severity.valueOf(severity))
-                .severityScore(sevScore.floatValue())
-                .confidenceScore(confidence.floatValue())
+                .severityScore(sevScore)
+                .confidenceScore(confidence)
                 .bboxWidth(bboxW)
                 .bboxHeight(bboxH)
                 .detectedBy(Pothole.DetectedBy.citizen)
                 .status(Pothole.Status.pending)
                 .priorityScore(priority)
                 .upvoteCount(0)
-                .roadType(Pothole.RoadType.valueOf(
-                        req.getRoadType() != null ? req.getRoadType() : "unknown"))
+                .roadType(Pothole.RoadType.valueOf(roadType))
                 .reportedBy(user)
                 .build();
 
         potholeRepository.save(pothole);
+        log.info("Pothole saved: id={}, user={}, city={}",
+                pothole.getId(), userEmail, city.getName());
 
-        // 9. Auto assign to zone authority
+        // 10. Auto assign to zone authority
         authorityRepository.findFirstByZoneIdAndIsActiveTrue(zone.getId())
-                .ifPresent(authority -> {
-                    pothole.setAssignedTo(authority);
+                .ifPresent(auth -> {
+                    pothole.setAssignedTo(auth);
                     potholeRepository.save(pothole);
 
                     // Save notification
-                    Notification notif = Notification.builder()
+                    notificationRepository.save(Notification.builder()
                             .pothole(pothole)
-                            .authority(authority)
+                            .authority(auth)
                             .type(Notification.Type.new_report)
-                            .sentTo(authority.getEmail())
+                            .sentTo(auth.getEmail())
                             .isSent(false)
-                            .build();
-                    notificationRepository.save(notif);
+                            .build());
 
-                    // Send email to authority
-                    if (authority.getEmail() != null && !authority.getEmail().isEmpty()) {
+                    // Send email
+                    if (auth.getEmail() != null && !auth.getEmail().isBlank()) {
                         emailService.sendNewPotholeAlert(
-                                authority.getEmail(),
+                                auth.getEmail(),
                                 zone.getZoneName(),
                                 severity,
                                 req.getLatitude(),
-                                req.getLongitude()
-                        );
+                                req.getLongitude());
                     }
                 });
 
-        log.info("Pothole reported: ID={}, City={}, Severity={}", pothole.getId(), city.getName(), severity);
         return mapToResponse(pothole);
     }
 
-    // ── GET ALL FOR MAP ───────────────────────────────────────
-    public List<MapPotholeResponse> getPotholesForMap(Integer cityId) {
-        List<Pothole> potholes = potholeRepository.findByCityIdOrderByPriority(cityId);
-        return potholes.stream().map(p -> MapPotholeResponse.builder()
-                .id(p.getId())
-                .latitude(p.getLatitude())
-                .longitude(p.getLongitude())
-                .severity(p.getSeverity().name())
-                .status(p.getStatus().name())
-                .upvoteCount(p.getUpvoteCount())
-                .imageUrl(p.getImageUrl())
-                .zoneName(p.getZone().getZoneName())
-                .build()
-        ).collect(Collectors.toList());
-    }
-
-    // ── GET SINGLE POTHOLE ────────────────────────────────────
-    public PotholeResponse getPotholeById(Integer id) {
-        Pothole p = potholeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pothole not found"));
-        return mapToResponse(p);
-    }
-
-    // ── GET BY CITY ───────────────────────────────────────────
-    public List<PotholeResponse> getPotholesByCity(Integer cityId) {
-        return potholeRepository.findByCityId(cityId)
-                .stream().map(this::mapToResponse).collect(Collectors.toList());
-    }
-
-    // ── GET BY ZONE ───────────────────────────────────────────
-    public List<PotholeResponse> getPotholesByZone(Integer zoneId) {
-        return potholeRepository.findByZoneId(zoneId)
-                .stream().map(this::mapToResponse).collect(Collectors.toList());
-    }
-
-    // ── UPVOTE ────────────────────────────────────────────────
-    public Map<String, Object> upvotePothole(Integer potholeId, String userEmail) {
-        Pothole pothole = potholeRepository.findById(potholeId)
-                .orElseThrow(() -> new RuntimeException("Pothole not found"));
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (upvoteRepository.existsByPotholeIdAndUserId(potholeId, user.getId())) {
-            return Map.of("message", "Already upvoted", "upvoteCount", pothole.getUpvoteCount());
-        }
-
-        Upvote upvote = Upvote.builder().pothole(pothole).user(user).build();
-        upvoteRepository.save(upvote);
-
-        pothole.setUpvoteCount(pothole.getUpvoteCount() + 1);
-        // Recalculate priority
-        pothole.setPriorityScore(calculatePriority(
-                pothole.getSeverity().name(),
-                pothole.getUpvoteCount(),
-                pothole.getRoadType().name()
-        ));
-        potholeRepository.save(pothole);
-
-        return Map.of("message", "Upvoted successfully", "upvoteCount", pothole.getUpvoteCount());
-    }
-
-    // ── UPDATE STATUS (Authority) ─────────────────────────────
-    public PotholeResponse updateStatus(Integer potholeId, StatusUpdateRequest req) {
-        Pothole pothole = potholeRepository.findById(potholeId)
-                .orElseThrow(() -> new RuntimeException("Pothole not found"));
-
-        Pothole.Status newStatus = Pothole.Status.valueOf(req.getStatus());
-        pothole.setStatus(newStatus);
-        if (req.getNotes() != null) pothole.setNotes(req.getNotes());
-        potholeRepository.save(pothole);
-
-        // Notify citizen
-        if (pothole.getReportedBy() != null && pothole.getReportedBy().getEmail() != null) {
-            emailService.sendStatusUpdateToUser(
-                    pothole.getReportedBy().getEmail(),
-                    pothole.getReportedBy().getName(),
-                    potholeId,
-                    req.getStatus()
-            );
-        }
-
-        log.info("Pothole {} status updated to {}", potholeId, req.getStatus());
-        return mapToResponse(pothole);
-    }
-
-    // ── MY REPORTS ────────────────────────────────────────────
-    public List<PotholeResponse> getMyReports(String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return potholeRepository.findAll().stream()
-                .filter(p -> p.getReportedBy() != null &&
-                        p.getReportedBy().getId().equals(user.getId()))
-                .map(this::mapToResponse)
+    // ── MAP DATA ──────────────────────────────────────────
+    public List<MapPotholeResponse> getForMap(Integer cityId) {
+        return potholeRepository.findByCityIdOrderByPriority(cityId)
+                .stream().map(p -> MapPotholeResponse.builder()
+                        .id(p.getId())
+                        .latitude(p.getLatitude())
+                        .longitude(p.getLongitude())
+                        .severity(p.getSeverity().name())
+                        .status(p.getStatus().name())
+                        .upvoteCount(p.getUpvoteCount())
+                        .imageUrl(p.getImageUrl())
+                        .zoneName(p.getZone().getZoneName())
+                        .build())
                 .collect(Collectors.toList());
     }
 
-    // ── HELPER: Priority Score ────────────────────────────────
-    private int calculatePriority(String severity, int upvotes, String roadType) {
-        int score = upvotes * 2;
-        score += switch (severity) {
+    // ── GET BY ID ─────────────────────────────────────────
+    public PotholeResponse getById(Integer id) {
+        return mapToResponse(potholeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pothole not found")));
+    }
+
+    // ── GET BY CITY ───────────────────────────────────────
+    public List<PotholeResponse> getByCity(Integer cityId) {
+        return potholeRepository.findByCityId(cityId)
+                .stream().map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ── GET BY ZONE ───────────────────────────────────────
+    public List<PotholeResponse> getByZone(Integer zoneId) {
+        return potholeRepository.findByZoneId(zoneId)
+                .stream().map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ── UPVOTE ────────────────────────────────────────────
+    public Map<String, Object> upvotePothole(Integer id, String email) {
+        Pothole p = potholeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pothole not found"));
+        User u = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (upvoteRepository.existsByPotholeIdAndUserId(id, u.getId()))
+            return Map.of("message", "Already upvoted",
+                    "count", p.getUpvoteCount());
+
+        upvoteRepository.save(Upvote.builder()
+                .pothole(p).user(u).build());
+
+        p.setUpvoteCount(p.getUpvoteCount() + 1);
+        p.setPriorityScore(calcPriority(
+                p.getSeverity().name(),
+                p.getUpvoteCount(),
+                p.getRoadType().name()));
+        potholeRepository.save(p);
+
+        return Map.of("message", "Upvoted successfully!",
+                "count", p.getUpvoteCount());
+    }
+
+    // ── UPDATE STATUS ─────────────────────────────────────
+    public PotholeResponse updateStatus(Integer id, StatusUpdateRequest req) {
+        Pothole p = potholeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pothole not found"));
+
+        p.setStatus(Pothole.Status.valueOf(req.getStatus()));
+        if (req.getNotes() != null) p.setNotes(req.getNotes());
+        potholeRepository.save(p);
+
+        if (p.getReportedBy() != null
+                && p.getReportedBy().getEmail() != null) {
+            emailService.sendStatusUpdate(
+                    p.getReportedBy().getEmail(),
+                    p.getReportedBy().getName(),
+                    id, req.getStatus());
+        }
+
+        return mapToResponse(p);
+    }
+
+    // ── MY REPORTS ────────────────────────────────────────
+    public List<PotholeResponse> getMyReports(String email) {
+        User u = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return potholeRepository.findByReportedById(u.getId())
+                .stream().map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ── HELPER: Priority Score ────────────────────────────
+    private int calcPriority(String sev, int votes, String road) {
+        int s = votes * 2;
+        s += switch (sev.toLowerCase()) {
             case "high"   -> 40;
             case "medium" -> 20;
             default       -> 5;
         };
-        score += switch (roadType) {
+        s += switch (road.toLowerCase()) {
             case "highway"   -> 30;
             case "main_road" -> 20;
             case "internal"  -> 10;
             default          -> 0;
         };
-        return score;
+        return s;
     }
 
-    // ── HELPER: Map to Response ───────────────────────────────
+    // ── HELPER: Map to Response ───────────────────────────
     private PotholeResponse mapToResponse(Pothole p) {
         return PotholeResponse.builder()
                 .id(p.getId())
-                .city(p.getCity().getName())
-                .zoneName(p.getZone().getZoneName())
-                .zonePhone(p.getZone().getPhone())
+                .city(p.getCity() != null ? p.getCity().getName() : null)
+                .zoneName(p.getZone() != null ? p.getZone().getZoneName() : null)
+                .zonePhone(p.getZone() != null ? p.getZone().getPhone() : null)
                 .wardNumber(p.getWard() != null ? p.getWard().getWardNumber() : null)
                 .wardName(p.getWard() != null ? p.getWard().getWardName() : null)
                 .latitude(p.getLatitude())
                 .longitude(p.getLongitude())
                 .imageUrl(p.getImageUrl())
-                .severity(p.getSeverity().name())
+                .severity(p.getSeverity() != null ? p.getSeverity().name() : null)
                 .severityScore(p.getSeverityScore())
                 .confidenceScore(p.getConfidenceScore())
-                .status(p.getStatus().name())
+                .status(p.getStatus() != null ? p.getStatus().name() : null)
                 .upvoteCount(p.getUpvoteCount())
                 .priorityScore(p.getPriorityScore())
                 .roadType(p.getRoadType() != null ? p.getRoadType().name() : null)
-                .detectedBy(p.getDetectedBy().name())
-                .reportedByName(p.getReportedBy() != null ? p.getReportedBy().getName() : "Auto")
-                .assignedOfficer(p.getAssignedTo() != null ? p.getAssignedTo().getName() : null)
+                .detectedBy(p.getDetectedBy() != null ? p.getDetectedBy().name() : null)
+                .reportedByName(p.getReportedBy() != null
+                        ? p.getReportedBy().getName() : "Auto")
+                .assignedOfficer(p.getAssignedTo() != null
+                        ? p.getAssignedTo().getName() : null)
                 .createdAt(p.getCreatedAt())
                 .build();
+
     }
 }

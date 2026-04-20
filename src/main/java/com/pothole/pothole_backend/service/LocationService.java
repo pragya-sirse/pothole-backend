@@ -21,7 +21,12 @@ public class LocationService {
     private final WardRepository wardRepository;
 
     public List<City> getAllCities() {
-        return cityRepository.findAll();
+        try {
+            return cityRepository.findAll();
+        } catch (Exception e) {
+            log.error("getAllCities failed: {}", e.getMessage());
+            throw new RuntimeException("Failed to load cities");
+        }
     }
 
     public City getCityById(Integer id) {
@@ -30,23 +35,29 @@ public class LocationService {
     }
 
     public List<Zone> getZonesByCity(Integer cityId) {
-        return zoneRepository.findByCityId(cityId);
+        try {
+            return zoneRepository.findByCityId(cityId);
+        } catch (Exception e) {
+            log.error("getZonesByCity failed: {}", e.getMessage());
+            throw new RuntimeException("Failed to load zones");
+        }
     }
 
     public List<Ward> getWardsByZone(Integer zoneId) {
-        return wardRepository.findByZoneId(zoneId);
+        try {
+            return wardRepository.findByZoneId(zoneId);
+        } catch (Exception e) {
+            log.error("getWardsByZone failed: {}", e.getMessage());
+            throw new RuntimeException("Failed to load wards");
+        }
     }
 
     public List<Ward> getWardsByCity(Integer cityId) {
-        return wardRepository.findByCityId(cityId);
-    }
-
-    // Find which zone a GPS coordinate belongs to
-    // Simple approach: find nearest zone based on ward
-    public Zone findZoneByCoordinates(Integer cityId, Double lat, Double lng) {
-        // Default: return first zone of city (in real app use GIS polygon check)
-        List<Zone> zones = zoneRepository.findByCityId(cityId);
-        if (zones.isEmpty()) throw new RuntimeException("No zones found for city");
-        return zones.get(0);
+        try {
+            return wardRepository.findByCityId(cityId);
+        } catch (Exception e) {
+            log.error("getWardsByCity failed: {}", e.getMessage());
+            throw new RuntimeException("Failed to load wards");
+        }
     }
 }

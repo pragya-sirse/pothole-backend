@@ -11,20 +11,21 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Ward {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private City city;
 
-    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zone_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "wards"})
     private Zone zone;
 
     @Column(name = "ward_number", nullable = false)

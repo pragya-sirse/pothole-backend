@@ -53,6 +53,6 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Status email failed: {}", e.getMessage());
         }
-    
+
     }
 }

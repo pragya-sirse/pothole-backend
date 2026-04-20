@@ -9,9 +9,10 @@ import com.pothole.pothole_backend.repository.CityRepository;
 import com.pothole.pothole_backend.repository.WardRepository;
 import com.pothole.pothole_backend.repository.ZoneRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.util.List;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LocationService {

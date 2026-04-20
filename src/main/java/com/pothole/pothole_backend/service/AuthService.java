@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-
     private final UserRepository userRepository;
     private final CityRepository cityRepository;
     private final WardRepository wardRepository;
@@ -28,6 +27,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest req) {
+
         if (userRepository.existsByEmail(req.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
@@ -56,6 +56,7 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+
         String token = jwtUtil.generateToken(user.getEmail());
 
         return AuthResponse.builder()
@@ -68,8 +69,13 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest req) {
+
+        // 👇 THIS LINE WILL NOW WORK (after config fix)
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        req.getEmail(),
+                        req.getPassword()
+                )
         );
 
         User user = userRepository.findByEmail(req.getEmail())

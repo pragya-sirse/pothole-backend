@@ -10,7 +10,6 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
 @Component
 public class JwtUtil {
 
@@ -20,42 +19,32 @@ public class JwtUtil {
     @Value("${app.jwt.expiration}")
     private Long expiration;
 
-    private Key getSigningKey() {
+    private Key getKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
     public String generateToken(String email) {
-        Map<String, Object> claims = new HashMap<>();
         return Jwts.builder()
-                .setClaims(claims)
                 .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String extractEmail(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+                .setSigningKey(getKey()).build()
+                .parseClaimsJws(token).getBody().getSubject();
     }
 
     public boolean validateToken(String token, UserDetails userDetails) {
         try {
             String email = extractEmail(token);
-            Date expDate = Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody()
-                    .getExpiration();
-            return email.equals(userDetails.getUsername()) && expDate.after(new Date());
-        } catch (Exception e) {
-            return false;
-        }
+            Date exp = Jwts.parserBuilder()
+                    .setSigningKey(getKey()).build()
+                    .parseClaimsJws(token).getBody().getExpiration();
+            return email.equals(userDetails.getUsername()) && exp.after(new Date());
+        } catch (Exception e) { return false; }
     }
 }

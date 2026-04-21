@@ -27,16 +27,14 @@ public class MlService {
     public Map<String, Object> detectPothole(MultipartFile image) {
         try {
             if (image == null || image.isEmpty()) {
+                log.warn("No image provided, using fallback");
                 return fallback();
             }
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-            ByteArrayResource resource = new ByteArrayResource(
-                    image.getBytes()) {
-                @Override
-                public String getFilename() {
+            ByteArrayResource resource = new ByteArrayResource(image.getBytes()) {
+                @Override public String getFilename() {
                     return image.getOriginalFilename() != null
                             ? image.getOriginalFilename() : "image.jpg";
                 }
@@ -49,14 +47,12 @@ public class MlService {
                     mlUrl, HttpMethod.POST,
                     new HttpEntity<>(body, headers), Map.class);
 
-            if (response.getStatusCode() == HttpStatus.OK
-                    && response.getBody() != null) {
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 log.info("ML detection success: {}", response.getBody());
                 return response.getBody();
             }
         } catch (Exception e) {
-            log.warn("ML service unavailable, using fallback: {}",
-                    e.getMessage());
+            log.warn("ML service unavailable ({}), using fallback", e.getMessage());
         }
         return fallback();
     }
@@ -64,11 +60,11 @@ public class MlService {
     private Map<String, Object> fallback() {
         return Map.of(
                 "pothole_detected", true,
-                "severity", "medium",
-                "confidence", 0.75,
-                "severity_score", 0.60,
-                "bbox_width", 120,
-                "bbox_height", 90
+                "severity",         "medium",
+                "confidence",       0.75,
+                "severity_score",   0.60,
+                "bbox_width",       120,
+                "bbox_height",      90
         );
     }
 }

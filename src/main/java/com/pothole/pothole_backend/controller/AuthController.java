@@ -20,15 +20,13 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(
             @Valid @RequestBody RegisterRequest req) {
-        AuthResponse response = authService.register(req);
-        return ResponseEntity.ok(ApiResponse.success("Registration successful", response));
+        return ResponseEntity.ok(ApiResponse.success("Registered!", authService.register(req)));
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest req) {
-        AuthResponse response = authService.login(req);
-        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+        return ResponseEntity.ok(ApiResponse.success("Login success!", authService.login(req)));
     }
 
     @GetMapping("/test")

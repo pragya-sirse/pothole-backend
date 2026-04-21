@@ -7,7 +7,6 @@ import java.util.Optional;
 
 @Repository
 public interface UpvoteRepository extends JpaRepository<Upvote, Integer> {
-    Optional<Upvote> findByPotholeIdAndUserId(Integer potholeId, Integer userId);
     boolean existsByPotholeIdAndUserId(Integer potholeId, Integer userId);
     Long countByPotholeId(Integer potholeId);
 }

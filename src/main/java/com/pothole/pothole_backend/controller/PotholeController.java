@@ -23,83 +23,58 @@ import java.util.Map;
 public class PotholeController {
 
     private final PotholeService potholeService;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper   objectMapper;
 
-    // PUBLIC - Map view
     @GetMapping("/map/{cityId}")
-    public ResponseEntity<ApiResponse<List<MapPotholeResponse>>> map(
-            @PathVariable Integer cityId) {
-        return ResponseEntity.ok(
-                ApiResponse.success("Map data fetched",
-                        potholeService.getForMap(cityId)));
+    public ResponseEntity<ApiResponse<List<MapPotholeResponse>>> map(@PathVariable Integer cityId) {
+        return ResponseEntity.ok(ApiResponse.success("Map data", potholeService.getForMap(cityId)));
     }
 
-    // PUBLIC - Single pothole
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<PotholeResponse>> getOne(
-            @PathVariable Integer id) {
-        return ResponseEntity.ok(
-                ApiResponse.success("Pothole fetched",
-                        potholeService.getById(id)));
+    public ResponseEntity<ApiResponse<PotholeResponse>> getOne(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success("Pothole", potholeService.getById(id)));
     }
 
-    // PUBLIC - By city
     @GetMapping("/city/{cityId}")
-    public ResponseEntity<ApiResponse<List<PotholeResponse>>> byCity(
-            @PathVariable Integer cityId) {
-        return ResponseEntity.ok(
-                ApiResponse.success("Potholes fetched",
-                        potholeService.getByCity(cityId)));
+    public ResponseEntity<ApiResponse<List<PotholeResponse>>> byCity(@PathVariable Integer cityId) {
+        return ResponseEntity.ok(ApiResponse.success("Potholes", potholeService.getByCity(cityId)));
     }
 
-    // PUBLIC - By zone
     @GetMapping("/zone/{zoneId}")
-    public ResponseEntity<ApiResponse<List<PotholeResponse>>> byZone(
-            @PathVariable Integer zoneId) {
-        return ResponseEntity.ok(
-                ApiResponse.success("Potholes fetched",
-                        potholeService.getByZone(zoneId)));
+    public ResponseEntity<ApiResponse<List<PotholeResponse>>> byZone(@PathVariable Integer zoneId) {
+        return ResponseEntity.ok(ApiResponse.success("Potholes", potholeService.getByZone(zoneId)));
     }
 
-    // PROTECTED - Report pothole
     @PostMapping(value = "/report", consumes = {"multipart/form-data"})
     public ResponseEntity<ApiResponse<PotholeResponse>> report(
             @RequestPart("data") String dataJson,
             @RequestPart(value = "image", required = false) MultipartFile image,
             Authentication auth) {
         try {
-            PotholeReportRequest req = objectMapper.readValue(
-                    dataJson, PotholeReportRequest.class);
-            PotholeResponse response = potholeService.reportPothole(
-                    req, image, auth.getName());
-            return ResponseEntity.ok(
-                    ApiResponse.success("Pothole reported successfully", response));
+            PotholeReportRequest req = objectMapper.readValue(dataJson, PotholeReportRequest.class);
+            return ResponseEntity.ok(ApiResponse.success("Pothole reported successfully",
+                    potholeService.reportPothole(req, image, auth.getName())));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Report failed: " + e.getMessage()));
         }
     }
 
-    // PROTECTED - Upvote
     @PutMapping("/{id}/upvote")
     public ResponseEntity<ApiResponse<Map<String, Object>>> upvote(
-            @PathVariable Integer id,
-            Authentication auth) {
+            @PathVariable Integer id, Authentication auth) {
         return ResponseEntity.ok(ApiResponse.success("Done",
                 potholeService.upvotePothole(id, auth.getName())));
     }
 
-    // PROTECTED - My reports
     @GetMapping("/my-reports")
-    public ResponseEntity<ApiResponse<List<PotholeResponse>>> mine(
-            Authentication auth) {
+    public ResponseEntity<ApiResponse<List<PotholeResponse>>> mine(Authentication auth) {
         return ResponseEntity.ok(ApiResponse.success("Your reports",
                 potholeService.getMyReports(auth.getName())));
     }
 
-    // PROTECTED - Update status
     @PutMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<PotholeResponse>> status(
+    public ResponseEntity<ApiResponse<PotholeResponse>> updateStatus(
             @PathVariable Integer id,
             @Valid @RequestBody StatusUpdateRequest req) {
         return ResponseEntity.ok(ApiResponse.success("Status updated",

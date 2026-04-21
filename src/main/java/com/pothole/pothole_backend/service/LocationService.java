@@ -12,9 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.util.List;
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class LocationService {
 
     private final CityRepository cityRepository;
@@ -22,43 +22,23 @@ public class LocationService {
     private final WardRepository wardRepository;
 
     public List<City> getAllCities() {
-        try {
-            return cityRepository.findAll();
-        } catch (Exception e) {
-            log.error("getAllCities failed: {}", e.getMessage());
-            throw new RuntimeException("Failed to load cities");
-        }
+        return cityRepository.findAll();
     }
 
     public City getCityById(Integer id) {
         return cityRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("City not found"));
+                .orElseThrow(() -> new RuntimeException("City not found: " + id));
     }
 
     public List<Zone> getZonesByCity(Integer cityId) {
-        try {
-            return zoneRepository.findByCityId(cityId);
-        } catch (Exception e) {
-            log.error("getZonesByCity failed: {}", e.getMessage());
-            throw new RuntimeException("Failed to load zones");
-        }
+        return zoneRepository.findByCityId(cityId);
     }
 
     public List<Ward> getWardsByZone(Integer zoneId) {
-        try {
-            return wardRepository.findByZoneId(zoneId);
-        } catch (Exception e) {
-            log.error("getWardsByZone failed: {}", e.getMessage());
-            throw new RuntimeException("Failed to load wards");
-        }
+        return wardRepository.findByZoneId(zoneId);
     }
 
     public List<Ward> getWardsByCity(Integer cityId) {
-        try {
-            return wardRepository.findByCityId(cityId);
-        } catch (Exception e) {
-            log.error("getWardsByCity failed: {}", e.getMessage());
-            throw new RuntimeException("Failed to load wards");
-        }
+        return wardRepository.findByCityId(cityId);
     }
 }

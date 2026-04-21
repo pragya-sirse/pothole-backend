@@ -25,7 +25,7 @@ public class Ward {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zone_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "wards"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Zone zone;
 
     @Column(name = "ward_number", nullable = false)

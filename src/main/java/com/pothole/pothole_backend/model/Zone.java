@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
-
 @Entity
 @Table(name = "zones")
 @Data
@@ -20,7 +19,7 @@ public class Zone {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "zones"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private City city;
 
     @Column(name = "zone_number", nullable = false)

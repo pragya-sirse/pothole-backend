@@ -3,13 +3,13 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 @Entity
 @Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
 
     @Id
@@ -27,15 +27,15 @@ public class User {
 
     @Column(length = 20)
     private String phone;
-    @JsonIgnoreProperties({"hibernateLazyInitializer","handler","zones"})
-    @ManyToOne(fetch = FetchType.EAGER)
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private City city;
 
-
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ward_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Ward ward;
 
     @Enumerated(EnumType.STRING)
@@ -48,9 +48,7 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public enum Role {
-        citizen, admin
-    }
+    public enum Role { citizen, admin }
 
     @PrePersist
     public void prePersist() {

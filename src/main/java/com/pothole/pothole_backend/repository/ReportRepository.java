@@ -9,5 +9,4 @@ import java.util.List;
 public interface ReportRepository extends JpaRepository<Report, Integer> {
     List<Report> findByPotholeId(Integer potholeId);
     List<Report> findByUserId(Integer userId);
-    boolean existsByPotholeIdAndUserId(Integer potholeId, Integer userId);
 }

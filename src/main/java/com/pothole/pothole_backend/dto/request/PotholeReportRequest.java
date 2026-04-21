@@ -6,16 +6,15 @@ import lombok.Data;
 
 @Data
 public class PotholeReportRequest {
-    @NotNull(message = "City ID required")
+    @NotNull(message = "City ID is required")
     private Integer cityId;
 
-    @NotNull(message = "Latitude required")
+    @NotNull(message = "Latitude is required")
     private Double latitude;
 
-    @NotNull(message = "Longitude required")
+    @NotNull(message = "Longitude is required")
     private Double longitude;
 
     private String description;
     private String roadType;
-    // image comes as MultipartFile in controller separately
 }

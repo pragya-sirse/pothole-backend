@@ -6,8 +6,7 @@ import lombok.Data;
 @Data
 public class StatusUpdateRequest {
     @NotBlank(message = "Status is required")
-    private String status; // pending, in_progress, completed, rejected
-
+    private String status;
     private String notes;
     private String contractorName;
 }

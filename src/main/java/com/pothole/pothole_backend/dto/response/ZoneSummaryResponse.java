@@ -2,10 +2,7 @@ package com.pothole.pothole_backend.dto.response;
 
 import lombok.*;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
+@Data @AllArgsConstructor @NoArgsConstructor @Builder
 public class ZoneSummaryResponse {
     private String city;
     private String zoneName;

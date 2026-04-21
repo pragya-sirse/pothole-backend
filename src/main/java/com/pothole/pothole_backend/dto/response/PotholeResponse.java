@@ -3,10 +3,7 @@ package com.pothole.pothole_backend.dto.response;
 import lombok.*;
 import java.time.LocalDateTime;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
+@Data @AllArgsConstructor @NoArgsConstructor @Builder
 public class PotholeResponse {
     private Integer id;
     private String city;

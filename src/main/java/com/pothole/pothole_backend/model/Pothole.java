@@ -5,30 +5,32 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "potholes")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Pothole {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private City city;
-    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
-    @ManyToOne(fetch = FetchType.EAGER)
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zone_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Zone zone;
-    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
-    @ManyToOne(fetch = FetchType.EAGER)
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ward_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Ward ward;
 
     @Column(nullable = false)
@@ -73,15 +75,15 @@ public class Pothole {
     @Enumerated(EnumType.STRING)
     @Column(name = "road_type", length = 15)
     private RoadType roadType;
-    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reported_by")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User reportedBy;
-    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_to")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Authority assignedTo;
 
     @Column(columnDefinition = "TEXT")
@@ -93,20 +95,20 @@ public class Pothole {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public enum Severity { low, medium, high }
-    public enum Status { pending, in_progress, completed, rejected }
-    public enum DetectedBy { citizen, auto }
-    public enum RoadType { highway, main_road, internal, unknown }
+    public enum Severity  { low, medium, high }
+    public enum Status    { pending, in_progress, completed, rejected }
+    public enum DetectedBy{ citizen, auto }
+    public enum RoadType  { highway, main_road, internal, unknown }
 
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-        if (this.status == null) this.status = Status.pending;
+        this.createdAt    = LocalDateTime.now();
+        this.updatedAt    = LocalDateTime.now();
+        if (this.status      == null) this.status      = Status.pending;
         if (this.upvoteCount == null) this.upvoteCount = 0;
         if (this.priorityScore == null) this.priorityScore = 0;
-        if (this.detectedBy == null) this.detectedBy = DetectedBy.citizen;
-        if (this.roadType == null) this.roadType = RoadType.unknown;
+        if (this.detectedBy  == null) this.detectedBy  = DetectedBy.citizen;
+        if (this.roadType    == null) this.roadType    = RoadType.unknown;
     }
 
     @PreUpdate

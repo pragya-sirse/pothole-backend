@@ -15,10 +15,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
     private final UserRepository userRepository;
     private final CityRepository cityRepository;
     private final WardRepository wardRepository;
@@ -27,40 +27,32 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest req) {
-
-        if (userRepository.existsByEmail(req.getEmail())) {
-            throw new RuntimeException("Email already registered");
-        }
+        if (userRepository.existsByEmail(req.getEmail()))
+            throw new RuntimeException("Email already registered!");
 
         City city = null;
-        if (req.getCityId() != null) {
+        if (req.getCityId() != null)
             city = cityRepository.findById(req.getCityId())
                     .orElseThrow(() -> new RuntimeException("City not found"));
-        }
 
         Ward ward = null;
-        if (req.getWardId() != null) {
+        if (req.getWardId() != null)
             ward = wardRepository.findById(req.getWardId())
                     .orElseThrow(() -> new RuntimeException("Ward not found"));
-        }
 
         User user = User.builder()
                 .name(req.getName())
                 .email(req.getEmail())
                 .passwordHash(passwordEncoder.encode(req.getPassword()))
                 .phone(req.getPhone())
-                .city(city)
-                .ward(ward)
+                .city(city).ward(ward)
                 .role(User.Role.citizen)
                 .isVerified(true)
                 .build();
 
         userRepository.save(user);
-
-        String token = jwtUtil.generateToken(user.getEmail());
-
         return AuthResponse.builder()
-                .token(token)
+                .token(jwtUtil.generateToken(user.getEmail()))
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
@@ -69,22 +61,14 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest req) {
-
-        // 👇 THIS LINE WILL NOW WORK (after config fix)
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        req.getEmail(),
-                        req.getPassword()
-                )
-        );
+                new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
 
         User user = userRepository.findByEmail(req.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String token = jwtUtil.generateToken(user.getEmail());
-
         return AuthResponse.builder()
-                .token(token)
+                .token(jwtUtil.generateToken(user.getEmail()))
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
@@ -92,3 +76,4 @@ public class AuthService {
                 .build();
     }
 }
+

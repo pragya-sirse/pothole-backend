@@ -6,7 +6,6 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -16,22 +15,29 @@ public class EmailService {
 
     @Async
     public void sendNewPotholeAlert(String toEmail, String zoneName,
-                                    String severity, Double lat, Double lng) {
+                                    String severity, Double lat, Double lng,
+                                    Integer potholeId, String reporterName) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setTo(toEmail);
-            msg.setSubject("New " + severity.toUpperCase() +
-                    " Pothole Reported - " + zoneName);
+            msg.setSubject("[URGENT] New " + severity.toUpperCase()
+                    + " Pothole Reported — " + zoneName);
             msg.setText(
-                    "Zone: " + zoneName + "\n" +
-                            "Severity: " + severity.toUpperCase() + "\n" +
-                            "Location: https://maps.google.com/?q=" + lat + "," + lng + "\n\n" +
-                            "Please take immediate action.\n- Pothole Detection System MP"
+                    "Dear Zonal Officer,\n\n"
+                            + "A new pothole has been reported in your zone. Details:\n\n"
+                            + "  Pothole ID   : #" + potholeId + "\n"
+                            + "  Zone         : " + zoneName + "\n"
+                            + "  Severity     : " + severity.toUpperCase() + "\n"
+                            + "  Reported By  : " + reporterName + "\n"
+                            + "  Location     : " + lat + ", " + lng + "\n"
+                            + "  Google Maps  : https://maps.google.com/?q=" + lat + "," + lng + "\n\n"
+                            + "Please take necessary action at the earliest.\n\n"
+                            + "— Smart Pothole Detection System, Madhya Pradesh"
             );
             mailSender.send(msg);
             log.info("Alert email sent to: {}", toEmail);
         } catch (Exception e) {
-            log.error("Email failed: {}", e.getMessage());
+            log.error("Email send failed to {}: {}", toEmail, e.getMessage());
         }
     }
 
@@ -41,18 +47,19 @@ public class EmailService {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setTo(toEmail);
-            msg.setSubject("Pothole #" + id + " Status: " + status.toUpperCase());
+            msg.setSubject("Pothole Report #" + id + " — Status Updated to "
+                    + status.toUpperCase());
             msg.setText(
-                    "Dear " + name + ",\n\n" +
-                            "Your pothole report #" + id +
-                            " status has been updated to: " + status.toUpperCase() +
-                            "\n\nThank you!\n- Pothole Detection System MP"
+                    "Dear " + name + ",\n\n"
+                            + "Your pothole report #" + id + " has been updated.\n\n"
+                            + "  New Status: " + status.toUpperCase() + "\n\n"
+                            + "Thank you for helping make Madhya Pradesh roads safer!\n\n"
+                            + "— Smart Pothole Detection System, Madhya Pradesh"
             );
             mailSender.send(msg);
             log.info("Status email sent to: {}", toEmail);
         } catch (Exception e) {
             log.error("Status email failed: {}", e.getMessage());
         }
-
     }
 }

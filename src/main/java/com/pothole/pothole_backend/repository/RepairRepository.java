@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+
 @Repository
 public interface RepairRepository extends JpaRepository<Repair, Integer> {
     List<Repair> findByAuthorityId(Integer authorityId);

@@ -47,12 +47,18 @@ public class PotholeController {
 
     @PostMapping(value = "/report", consumes = {"multipart/form-data"})
     public ResponseEntity<ApiResponse<PotholeResponse>> report(
-            @RequestPart("data") String dataJson,
+            @RequestPart(value = "data", required = false) String dataJson,
             @RequestPart(value = "image", required = false) MultipartFile image,
             Authentication auth) {
         try {
-            PotholeReportRequest req = objectMapper.readValue(dataJson, PotholeReportRequest.class);
-            return ResponseEntity.ok(ApiResponse.success("Pothole reported successfully",
+            if (dataJson == null || dataJson.isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("data field is required"));
+            }
+            PotholeReportRequest req = objectMapper.readValue(
+                    dataJson, PotholeReportRequest.class);
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Pothole reported successfully",
                     potholeService.reportPothole(req, image, auth.getName())));
         } catch (Exception e) {
             return ResponseEntity.badRequest()

@@ -1,5 +1,7 @@
 package com.pothole.pothole_backend.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.pothole.pothole_backend.dto.request.PotholeReportRequest;
 import com.pothole.pothole_backend.dto.request.StatusUpdateRequest;
 import com.pothole.pothole_backend.dto.response.MapPotholeResponse;
@@ -28,6 +30,12 @@ public class PotholeService {
     private final NotificationRepository notificationRepository;
     private final MlService              mlService;
     private final EmailService           emailService;
+    private final Cloudinary cloudinary;
+    private final ImageService imageService;
+
+
+
+
 
     // ── REPORT NEW POTHOLE ─────────────────────────────────
     public PotholeResponse reportPothole(PotholeReportRequest req,
@@ -94,8 +102,7 @@ public class PotholeService {
         int priority = calcPriority(severityEnum.name(), 0, roadTypeEnum.name());
 
         // 8. Image URL
-        String imageUrl = "https://res.cloudinary.com/demo/ph_"
-                + System.currentTimeMillis() + ".jpg";
+        String imageUrl = imageService.uploadImage(image);
 
         // 9. Save pothole
         Pothole pothole = Pothole.builder()
@@ -292,5 +299,7 @@ public class PotholeService {
             log.error("mapToResponse failed: {}", e.getMessage());
             throw new RuntimeException("Mapping failed: " + e.getMessage());
         }
+
     }
+
 }

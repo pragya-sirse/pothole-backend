@@ -6,6 +6,7 @@ import com.pothole.pothole_backend.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -46,6 +47,8 @@ public class SecurityConfig {
                                 "/api/potholes/zone/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/api/potholes/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/dashboard/summary/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/dashboard/zones/**").permitAll()
                         // All other requests need authentication
                         .anyRequest().authenticated()
                 )

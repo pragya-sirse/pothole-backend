@@ -45,12 +45,20 @@ public class PotholeService {
         try {
             List<Pothole> nearby = potholeRepository
                     .findNearby(req.getLatitude(), req.getLongitude());
-            if (!nearby.isEmpty()) {
-                Pothole existing = nearby.get(0);
-                log.info("Duplicate found id={}, upvoting", existing.getId());
-                upvotePothole(existing.getId(), userEmail);
+            // Only skip if THIS user already reported near this location
+            boolean alreadyReportedByThisUser = nearby.stream()
+                    .anyMatch(p -> p.getReportedBy() != null
+                            && p.getReportedBy().getEmail().equals(userEmail));
+            if (alreadyReportedByThisUser) {
+                Pothole existing = nearby.stream()
+                        .filter(p -> p.getReportedBy() != null
+                                && p.getReportedBy().getEmail().equals(userEmail))
+                        .findFirst().get();
+                log.info("Same user duplicate at same location, returning existing id={}",
+                        existing.getId());
                 return mapToResponse(existing);
             }
+            // Different user reporting same location — allow new report
         } catch (Exception e) {
             log.warn("Nearby check failed: {}", e.getMessage());
         }

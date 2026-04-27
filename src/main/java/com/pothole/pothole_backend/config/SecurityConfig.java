@@ -36,20 +36,18 @@ public class SecurityConfig {
                         s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(h -> h.frameOptions(f -> f.disable()))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/locations/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                        .requestMatchers(HttpMethod.GET,
                                 "/api/potholes/map/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                        .requestMatchers(HttpMethod.GET,
                                 "/api/potholes/city/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                        .requestMatchers(HttpMethod.GET,
                                 "/api/potholes/zone/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                        .requestMatchers(HttpMethod.GET,
                                 "/api/potholes/{id}").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/dashboard/summary/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/dashboard/zones/**").permitAll()
-                        // All other requests need authentication
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/dashboard/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -57,7 +55,6 @@ public class SecurityConfig {
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

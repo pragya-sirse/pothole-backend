@@ -34,9 +34,6 @@ public class PotholeService {
     private final ImageService imageService;
 
 
-
-
-
     // ── REPORT NEW POTHOLE ─────────────────────────────────
     public PotholeResponse reportPothole(PotholeReportRequest req,
                                          MultipartFile image,

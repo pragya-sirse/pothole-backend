@@ -86,10 +86,21 @@ public class PotholeService {
         }
 
         // 5. Get first zone of city
-        List<Zone> zones = zoneRepository.findByCityId(city.getId());
-        if (zones.isEmpty())
-            throw new RuntimeException("No zones for city: " + city.getName());
-        Zone zone = zones.get(0);
+        // 5. Get zone — user selected zone use karo, fallback city ki pehli zone
+        Zone zone;
+        if (req.getZoneId() != null) {
+            zone = zoneRepository.findById(req.getZoneId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Zone not found: " + req.getZoneId()));
+            log.info("Using user-selected zone: {} (id={})",
+                    zone.getZoneName(), zone.getId());
+        } else {
+            List<Zone> zones = zoneRepository.findByCityId(city.getId());
+            if (zones.isEmpty())
+                throw new RuntimeException("No zones for city: " + city.getName());
+            zone = zones.get(0);
+            log.info("No zoneId provided, using first zone: {}", zone.getZoneName());
+        }
 
         // 6. Parse enums safely
         Pothole.Severity severityEnum = parseSeverity(severity);

@@ -86,48 +86,63 @@ public class PotholeController {
         return ResponseEntity.ok(ApiResponse.success("Status updated",
                 potholeService.updateStatus(id, req)));
     }
-    @GetMapping("/{id}/quick-update")
-    public ResponseEntity<String> quickUpdate(
+    // ── QUICK STATUS UPDATE (Email link se) ──────────────────
+    @GetMapping("/{id}/quick-status")
+    public ResponseEntity<String> quickStatusUpdate(
             @PathVariable Integer id,
-            @RequestParam String status,
-            @RequestParam(required = false) String token) {
-
+            @RequestParam String status) {
         try {
             StatusUpdateRequest req = new StatusUpdateRequest();
             req.setStatus(status);
-            req.setNotes("Updated by zone authority via email link");
+            req.setNotes("Updated via email link by zone authority");
             potholeService.updateStatus(id, req);
 
-            String color = switch (status.toLowerCase()) {
-                case "completed"   -> "#10b981";
-                case "in_progress" -> "#3b82f6";
-                default            -> "#f59e0b";
-            };
-            String icon = switch (status.toLowerCase()) {
-                case "completed"   -> "✅";
-                case "in_progress" -> "🔧";
-                default            -> "⏳";
-            };
+            String color = status.equals("completed") ? "#28a745" :
+                    status.equals("in_progress") ? "#007bff" : "#ffc107";
+            String emoji = status.equals("completed") ? "✅" :
+                    status.equals("in_progress") ? "🔧" : "📋";
+            String label = status.equals("completed") ? "Completed" :
+                    status.equals("in_progress") ? "In Progress" : status;
 
-            String html = "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif;"
-                    + "background:#f0fdf4;display:flex;align-items:center;justify-content:center;"
-                    + "min-height:100vh;margin:0'>"
-                    + "<div style='background:white;border-radius:16px;padding:48px;text-align:center;"
-                    + "box-shadow:0 4px 24px rgba(0,0,0,0.1);max-width:400px'>"
-                    + "<div style='font-size:64px;margin-bottom:16px'>" + icon + "</div>"
-                    + "<h2 style='color:" + color + ";margin:0 0 12px'>"
-                    + "Status Updated!</h2>"
-                    + "<p style='color:#666;margin:0 0 8px'>Pothole #" + id + "</p>"
-                    + "<div style='background:" + color + "22;border:2px solid " + color
-                    + ";border-radius:8px;padding:12px;margin:16px 0'>"
-                    + "<strong style='color:" + color + ";font-size:18px'>"
-                    + status.replace("_", " ").toUpperCase() + "</strong>"
-                    + "</div>"
-                    + "<p style='color:#888;font-size:13px'>"
-                    + "The citizen has been notified automatically.</p>"
-                    + "<p style='color:#aaa;font-size:11px;margin-top:24px'>"
-                    + "RoadWatch MP — Smart Pothole Detection System</p>"
-                    + "</div></body></html>";
+            String html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width,initial-scale=1">
+              <title>Status Updated</title>
+            </head>
+            <body style="font-family:Arial,sans-serif;background:#f5f5f5;
+                  margin:0;padding:40px 20px;text-align:center;">
+              <div style="max-width:500px;margin:0 auto;background:white;
+                   border-radius:12px;padding:40px;
+                   box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+                <div style="font-size:64px;margin-bottom:16px;">%s</div>
+                <h2 style="color:#1F3864;margin-bottom:8px;">
+                  Status Updated Successfully
+                </h2>
+                <div style="background:%s;color:white;padding:12px 24px;
+                     border-radius:6px;display:inline-block;
+                     font-size:18px;font-weight:bold;margin:16px 0;">
+                  %s
+                </div>
+                <p style="color:#555;margin-top:16px;">
+                  Pothole Report <strong>#%d</strong> has been marked
+                  as <strong>%s</strong>.
+                </p>
+                <p style="color:#555;">
+                  The citizen will be notified automatically.
+                  The dashboard has been updated.
+                </p>
+                <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+                <p style="color:#888;font-size:13px;">
+                  Smart Pothole Detection System<br>
+                  SATI Vidisha, Madhya Pradesh
+                </p>
+              </div>
+            </body>
+            </html>
+            """.formatted(emoji, color, label, id, label);
 
             return ResponseEntity.ok()
                     .header("Content-Type", "text/html; charset=UTF-8")
@@ -136,10 +151,9 @@ public class PotholeController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .header("Content-Type", "text/html; charset=UTF-8")
-                    .body("<html><body style='font-family:Arial;text-align:center;"
-                            + "padding:50px'><h2>Error: " + e.getMessage()
-                            + "</h2></body></html>");
+                    .body("<h2>Error: " + e.getMessage() + "</h2>");
         }
+
     }
 
 }

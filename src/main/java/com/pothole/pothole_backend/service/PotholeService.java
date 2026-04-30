@@ -136,7 +136,7 @@ public class PotholeService {
         // 10. Auto-assign + notify authority with EMAIL
         try {
             authorityRepository.findFirstByZoneIdAndIsActiveTrue(zone.getId())
-                    .ifPresent(auth -> {
+                    .ifPresentOrElse(auth -> {
                         pothole.setAssignedTo(auth);
                         potholeRepository.save(pothole);
 
@@ -145,24 +145,36 @@ public class PotholeService {
                                 .type(Notification.Type.new_report)
                                 .sentTo(auth.getEmail()).isSent(false).build());
 
-                        // Send email to zone authority
-                        if (auth.getEmail() != null && !auth.getEmail().isBlank()) {
-                            emailService.sendNewPotholeAlert(
-                                    auth.getEmail(),
-                                    zone.getZoneName(),
-                                    severityEnum.name(),
-                                    req.getLatitude(),
-                                    req.getLongitude(),
-                                    pothole.getId(),
-                                    user.getName()
-                            );
-                        } else {
-                            log.warn("Authority {} has no email, skipping notification",
-                                    auth.getName());
-                        }
+                        log.info("Sending email for pothole #{} zone={} to demo email",
+                                pothole.getId(), zone.getZoneName());
+
+                        // Email ALWAYS goes to demo email (pragyasirse@gmail.com)
+                        emailService.sendNewPotholeAlert(
+                                auth.getEmail() != null ? auth.getEmail() : "no-reply@pothole.com",
+                                zone.getZoneName(),
+                                severityEnum.name(),
+                                req.getLatitude(),
+                                req.getLongitude(),
+                                pothole.getId(),
+                                user.getName()
+                        );
+
+                    }, () -> {
+                        // No authority found — still send email to demo
+                        log.warn("No authority found for zone {}, sending to demo email",
+                                zone.getZoneName());
+                        emailService.sendNewPotholeAlert(
+                                "no-authority@pothole.com",
+                                zone.getZoneName(),
+                                severityEnum.name(),
+                                req.getLatitude(),
+                                req.getLongitude(),
+                                pothole.getId(),
+                                user.getName()
+                        );
                     });
         } catch (Exception e) {
-            log.warn("Authority assign failed: {}", e.getMessage());
+            log.error("Authority assign/email failed: {}", e.getMessage());
         }
 
         return mapToResponse(pothole);

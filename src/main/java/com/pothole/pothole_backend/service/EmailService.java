@@ -66,4 +66,36 @@ public class EmailService {
             log.error("❌ Brevo email failed: {}", e.getMessage(), e);
         }
     }
+    @Async
+    public void sendStatusUpdate(String toEmail, String name,
+                                 Integer id, String status) {
+        try {
+            sibApi.TransactionalEmailsApi apiInstance = new sibApi.TransactionalEmailsApi();
+            apiInstance.getApiClient().setApiKey(apiKey);
+
+            String html = "<h3>Status Update</h3>" +
+                    "<p>Hello " + name + ",</p>" +
+                    "<p>Your pothole #" + id + " is now <b>" + status + "</b></p>";
+
+            sibModel.SendSmtpEmail email = new sibModel.SendSmtpEmail();
+
+            email.setSender(new sibModel.SendSmtpEmailSender()
+                    .email(senderEmail)
+                    .name(senderName));
+
+            email.setTo(java.util.Collections.singletonList(
+                    new sibModel.SendSmtpEmailTo().email(toEmail)
+            ));
+
+            email.setSubject("Pothole #" + id + " Status Update");
+            email.setHtmlContent(html);
+
+            apiInstance.sendTransacEmail(email);
+
+            log.info("✅ Status email sent via Brevo to {}", toEmail);
+
+        } catch (Exception e) {
+            log.error("❌ Status email failed: {}", e.getMessage(), e);
+        }
+    }
 }

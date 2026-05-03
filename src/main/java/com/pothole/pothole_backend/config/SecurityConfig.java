@@ -48,8 +48,7 @@ public class SecurityConfig {
                                 "/api/potholes/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/dashboard/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/potholes/*/quick-status").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/potholes/*/quick-status").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

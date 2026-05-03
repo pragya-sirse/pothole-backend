@@ -87,8 +87,10 @@ public class PotholeController {
                 potholeService.updateStatus(id, req)));
     }
     // ── QUICK STATUS UPDATE (Email link se) ──────────────────
-    @GetMapping("/{id}/quick-status")
-    public ResponseEntity<String> quickStatusUpdate(
+    // ── QUICK STATUS UPDATE via Email Link ─────────────────
+    @GetMapping(value = "/{id}/quick-status",
+            produces = "text/html; charset=UTF-8")
+    public ResponseEntity<String> quickStatus(
             @PathVariable Integer id,
             @RequestParam String status) {
         try {
@@ -97,63 +99,60 @@ public class PotholeController {
             req.setNotes("Updated via email link by zone authority");
             potholeService.updateStatus(id, req);
 
-            String color = status.equals("completed") ? "#28a745" :
-                    status.equals("in_progress") ? "#007bff" : "#ffc107";
-            String emoji = status.equals("completed") ? "✅" :
-                    status.equals("in_progress") ? "🔧" : "📋";
-            String label = status.equals("completed") ? "Completed" :
-                    status.equals("in_progress") ? "In Progress" : status;
+            String color = status.equals("completed")   ? "#28a745" :
+                    status.equals("in_progress") ? "#1976d2" :
+                            status.equals("rejected")    ? "#dc3545" : "#ffc107";
 
-            String html = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width,initial-scale=1">
-              <title>Status Updated</title>
-            </head>
-            <body style="font-family:Arial,sans-serif;background:#f5f5f5;
-                  margin:0;padding:40px 20px;text-align:center;">
-              <div style="max-width:500px;margin:0 auto;background:white;
-                   border-radius:12px;padding:40px;
-                   box-shadow:0 4px 20px rgba(0,0,0,0.1);">
-                <div style="font-size:64px;margin-bottom:16px;">%s</div>
-                <h2 style="color:#1F3864;margin-bottom:8px;">
-                  Status Updated Successfully
-                </h2>
-                <div style="background:%s;color:white;padding:12px 24px;
-                     border-radius:6px;display:inline-block;
-                     font-size:18px;font-weight:bold;margin:16px 0;">
-                  %s
-                </div>
-                <p style="color:#555;margin-top:16px;">
-                  Pothole Report <strong>#%d</strong> has been marked
-                  as <strong>%s</strong>.
-                </p>
-                <p style="color:#555;">
-                  The citizen will be notified automatically.
-                  The dashboard has been updated.
-                </p>
-                <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
-                <p style="color:#888;font-size:13px;">
-                  Smart Pothole Detection System<br>
-                  SATI Vidisha, Madhya Pradesh
-                </p>
-              </div>
-            </body>
-            </html>
-            """.formatted(emoji, color, label, id, label);
+            String emoji = status.equals("completed")   ? "\u2705" :
+                    status.equals("in_progress") ? "\uD83D\uDD27" : "\uD83D\uDCCB";
+
+            String label = status.equals("completed")   ? "Completed" :
+                    status.equals("in_progress") ? "In Progress" :
+                            status.equals("rejected")    ? "Rejected" : status;
+
+            String html = "<!DOCTYPE html>" +
+                    "<html><head><meta charset='UTF-8'>" +
+                    "<meta name='viewport' content='width=device-width,initial-scale=1'>" +
+                    "<title>Status Updated</title></head>" +
+                    "<body style='margin:0;padding:40px 20px;background:#f0f2f5;" +
+                    "font-family:Arial,sans-serif;text-align:center;'>" +
+                    "<div style='max-width:480px;margin:0 auto;background:white;" +
+                    "border-radius:12px;padding:40px;" +
+                    "box-shadow:0 4px 20px rgba(0,0,0,0.1);'>" +
+                    "<div style='font-size:60px;margin-bottom:16px;'>" + emoji + "</div>" +
+                    "<h2 style='color:#1F3864;margin:0 0 12px;'>" +
+                    "Status Updated Successfully</h2>" +
+                    "<div style='background:" + color + ";color:white;" +
+                    "padding:12px 28px;border-radius:8px;font-size:18px;" +
+                    "font-weight:bold;display:inline-block;margin:16px 0;'>" +
+                    label + "</div>" +
+                    "<p style='color:#555;margin:16px 0;'>" +
+                    "Pothole Report <strong>#" + id + "</strong> has been " +
+                    "marked as <strong>" + label + "</strong>.</p>" +
+                    "<p style='color:#555;'>The citizen will be notified " +
+                    "automatically by email.</p>" +
+                    "<hr style='border:none;border-top:1px solid #eee;" +
+                    "margin:24px 0;'>" +
+                    "<p style='color:#999;font-size:13px;margin:0;'>" +
+                    "Smart Pothole Detection and Reporting System<br>" +
+                    "SATI Vidisha, Madhya Pradesh</p>" +
+                    "</div></body></html>";
 
             return ResponseEntity.ok()
                     .header("Content-Type", "text/html; charset=UTF-8")
                     .body(html);
 
         } catch (Exception e) {
+            String errorHtml = "<!DOCTYPE html>" +
+                    "<html><body style='font-family:Arial;text-align:center;padding:40px;'>" +
+                    "<h2 style='color:#dc3545;'>\u274C Update Failed</h2>" +
+                    "<p>" + e.getMessage() + "</p>" +
+                    "</body></html>";
+
             return ResponseEntity.badRequest()
                     .header("Content-Type", "text/html; charset=UTF-8")
-                    .body("<h2>Error: " + e.getMessage() + "</h2>");
+                    .body(errorHtml);
         }
-
     }
 
 }
